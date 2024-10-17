@@ -1,12 +1,30 @@
-from flask import Flask, request, jsonify
+import os
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import OperationalError
 from sqlalchemy import inspect
 
+# Cargar las variables del archivo .env
+load_dotenv()
+
+# Configuración de la aplicación Flask
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/mysql'
-app.config['SECRET_KEY'] = 'secret_key'
+
+# Variables de entorno para la conexión MySQL
+MYSQL_USER = os.getenv('MYSQLUSER')
+MYSQL_PASSWORD = os.getenv('MYSQLPASSWORD')
+MYSQL_HOST = os.getenv('MYSQLHOST')
+MYSQL_PORT = os.getenv('MYSQLPORT', 3306)
+MYSQL_DATABASE = os.getenv('MYSQLDATABASE')
+
+# Configuración de la URL de la base de datos para SQLAlchemy
+DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inicializar SQLAlchemy
 db = SQLAlchemy(app)
+
 
 # Modelo Camiseta
 class Camiseta(db.Model):
