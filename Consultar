@@ -1,0 +1,10 @@
+def consultar_camisetas(cursor):
+    """Función para consultar camisetas, poner el nombre de la tabla correcto"""
+    query = "SELECT * FROM Camisas;"
+    cursor.execute(query)
+    resultados = cursor.fetchall()
+    if resultados:
+        for fila in resultados:
+            print(fila)
+    else:
+        print("No hay registros en la tabla de camisetas.")
