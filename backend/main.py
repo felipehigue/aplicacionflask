@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, session
 from backend.models import Usuarios
 from backend.models import Camisetas
+from backend.models import Ordenes
+
 from flask_cors import CORS
 
 import backend.db as db
@@ -11,6 +13,7 @@ app = Flask(__name__)
 CORS(app)  # Habilita CORS para todas las rutas
 app.config['SECRET_KEY'] = '123456789'
 app.config['SESSION_TYPE'] = 'filesystem'
+
 
 @app.route('/getUsuarios',methods=['GET'])
 def usuarios():
@@ -136,6 +139,70 @@ def deleteCamiseta(id_camiseta):
         return jsonify({'statusCode': 200, 'message': 'Camiseta eliminada con éxito'})
     except Exception as e:
         return jsonify({'statusCode': 400, 'err': True, 'message': str(e)})
+
+
+@app.route('/crearOrden', methods=['POST'])
+def crearOrden():
+    try:
+        data = request.get_json()
+        nueva_orden = Ordenes(
+            idOrden=data['idOrden'],
+            idCliente=data['idCliente'],
+            total=data['total'],
+            estado=data['estado']
+        )
+        db.session.add(nueva_orden)
+        db.session.commit()
+        return jsonify({'statusCode': 200, 'message': f"Orden con ID {nueva_orden.idOrden} ha sido creada."})
+    except Exception as e:
+        return jsonify({'statusCode': 400, 'err': True, 'message': str(e)})
+
+
+@app.route('/consultarOrdenesPendientes', methods=['GET'])
+def consultarOrdenesPendientes():
+    try:
+        ordenes_pendientes = db.session.query(Ordenes).filter_by(estado='pendiente').all()
+        if ordenes_pendientes:
+            return jsonify([orden.toDict() for orden in ordenes_pendientes])
+        else:
+            return jsonify({'statusCode': 404, 'message': 'No hay órdenes pendientes.'})
+    except Exception as e:
+        return jsonify({'statusCode': 400, 'err': True, 'message': str(e)})
+
+
+@app.route('/getOrden/<int:idOrden>', methods=['GET'])
+def get_orden(idOrden):
+    try:
+        orden = db.session.query(Ordenes).filter_by(idOrden=idOrden).first()
+        if orden:
+            return jsonify({
+                'statusCode': 200,
+                'idOrden': orden.idOrden,
+                'idCliente': orden.idCliente,
+                'total': orden.total,
+                'estado': orden.estado
+            })
+        else:
+            return jsonify({'statusCode': 404, 'message': 'Orden no encontrada.'}), 404
+    except Exception as e:
+        return jsonify({'statusCode': 500, 'message': str(e)}), 500
+
+
+@app.route('/updateOrden/<int:idOrden>', methods=['PUT'])
+def update_orden(idOrden):
+    try:
+        data = request.get_json()
+        estado = data.get('estado')
+
+        orden = db.session.query(Ordenes).filter_by(idOrden=idOrden).first()
+        if orden:
+            orden.estado = estado
+            db.session.commit()
+            return jsonify({'statusCode': 200, 'message': 'Estado de la orden actualizado correctamente.'})
+        else:
+            return jsonify({'statusCode': 404, 'message': 'Orden no encontrada.'}), 404
+    except Exception as e:
+        return jsonify({'statusCode': 500, 'message': str(e)}), 500
 
 
 

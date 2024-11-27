@@ -295,30 +295,145 @@ document.addEventListener("DOMContentLoaded", () => {
 
     
     document.getElementById("eliminar-camiseta-btn").addEventListener("click", () => {
-  formContainer.innerHTML = `
-    <h2>Eliminar Camiseta</h2>
-    <form id="eliminar-camiseta-form">
-      <label for="id_camiseta">ID de la Camiseta:</label>
-      <input type="number" id="id_camiseta" name="id_camiseta" required>
-      <button type="submit">Eliminar</button>
-    </form>
-  `;
+        formContainer.innerHTML = `
+          <h2>Eliminar Camiseta</h2>
+          <form id="eliminar-camiseta-form">
+            <label for="id_camiseta">ID de la Camiseta:</label>
+            <input type="number" id="id_camiseta" name="id_camiseta" required>
+            <button type="submit">Eliminar</button>
+          </form>
+        `;
 
-  document.getElementById("eliminar-camiseta-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const id = document.getElementById("id_camiseta").value;
+    document.getElementById("eliminar-camiseta-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = document.getElementById("id_camiseta").value;
 
-    try {
-      const response = await fetch(`${baseURL}/deleteCamiseta/${id}`, {
-        method: "DELETE"
+      try {
+        const response = await fetch(`${baseURL}/deleteCamiseta/${id}`, {
+          method: "DELETE"
+        });
+
+        const result = await response.json();
+        alert(result.message);
+      } catch (error) {
+        alert("Error al eliminar la camiseta");
+      }
       });
 
-      const result = await response.json();
-      alert(result.message);
-    } catch (error) {
-      alert("Error al eliminar la camiseta");
-    }
-  });
+    // Botón Crear Orden
+  document.getElementById('crear-orden-btn').addEventListener('click', () => {
+      formContainer.innerHTML = `
+          <h3>Crear Orden</h3>
+          <form id="formCrearOrden">
+              <label>ID Orden:</label>
+              <input type="number" id="idOrden" required><br>
+              <label>ID Cliente:</label>
+              <input type="number" id="idCliente" required><br>
+              <label>Total:</label>
+              <input type="number" id="total" required><br>
+              <label>Estado:</label>
+              <input type="text" id="estado" required><br>
+              <button type="submit">Crear Orden</button>
+          </form>
+      `;
+        document.getElementById('formCrearOrden').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idOrden = document.getElementById('idOrden').value;
+            const idCliente = document.getElementById('idCliente').value;
+            const total = document.getElementById('total').value;
+            const estado = document.getElementById('estado').value;
+
+            const response = await fetch('http://127.0.0.1:5000/crearOrden', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idOrden, idCliente, total, estado })
+            });
+            const data = await response.json();
+            alert(data.message);
+        });
+    });
+
+    // Botón Consultar Órdenes Pendientes
+    document.getElementById('consultar-ordenes-btn').addEventListener('click', async () => {
+        const response = await fetch('http://127.0.0.1:5000/consultarOrdenesPendientes');
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+            formContainer.innerHTML = `
+                <h3>Órdenes Pendientes</h3>
+                <ul>
+                    ${data.map(orden => `<li>ID: ${orden.idOrden}, Cliente: ${orden.idCliente}, Total: ${orden.total}, Estado: ${orden.estado}</li>`).join('')}
+                </ul>
+            `;
+        } else {
+            alert(data.message);
+        }
+    });
+
+    
+    document.getElementById("cambiar-estado-orden-btn").addEventListener("click", () => {
+      const formContainer = document.getElementById("form-container");
+      formContainer.innerHTML = `
+        <h2>Cambiar Estado de Orden</h2>
+        <form id="buscar-orden-form">
+          <label for="id_orden">ID de la Orden:</label>
+          <input type="number" id="id_orden" name="id_orden" required>
+          <button type="submit">Buscar</button>
+        </form>
+        <div id="form-estado-orden"></div>
+      `;
+    
+      // Manejar el evento de buscar la orden
+      document.getElementById("buscar-orden-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const id = document.getElementById("id_orden").value;
+    
+        try {
+          const response = await fetch(`${baseURL}/getOrden/${id}`);
+          const result = await response.json();
+    
+          if (result.statusCode === 404) {
+            document.getElementById("form-estado-orden").textContent = result.message;
+          } else {
+            document.getElementById("form-estado-orden").innerHTML = `
+              <form id="actualizar-estado-orden-form">
+                <p><strong>ID Orden:</strong> ${result.idOrden}</p>
+                <p><strong>ID Cliente:</strong> ${result.idCliente}</p>
+                <p><strong>Total:</strong> $${result.total}</p>
+                <label for="estado">Estado:</label>
+                <select id="estado" name="estado" required>
+                  <option value="pendiente" ${result.estado === "pendiente" ? "selected" : ""}>Pendiente</option>
+                  <option value="en progreso" ${result.estado === "en progreso" ? "selected" : ""}>En Progreso</option>
+                  <option value="completada" ${result.estado === "completada" ? "selected" : ""}>Completada</option>
+                  <option value="cancelada" ${result.estado === "cancelada" ? "selected" : ""}>Cancelada</option>
+                </select>
+                <button type="submit">Guardar Cambios</button>
+              </form>
+            `;
+    
+            // Manejar el evento para guardar los cambios
+            document.getElementById("actualizar-estado-orden-form").addEventListener("submit", async (event) => {
+              event.preventDefault();
+              const estado = document.getElementById("estado").value;
+    
+              const updateResponse = await fetch(`${baseURL}/updateOrden/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ estado })
+              });
+    
+              const updateResult = await updateResponse.json();
+              alert(updateResult.message);
+            });
+          }
+        } catch (error) {
+          document.getElementById("form-estado-orden").textContent = "Error al buscar la orden";
+        }
+      });
+    });
+    
+    
+
 });
   
 });

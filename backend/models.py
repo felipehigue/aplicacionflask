@@ -1,5 +1,7 @@
 import backend.db as db
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+
 class Usuarios(db.Base):
     __tablename__ = 'usuarios'
     id_usuario = Column(Integer, primary_key=True)
@@ -48,3 +50,32 @@ class Camisetas(db.Base):
     def toDict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
    
+
+class Ordenes(db.Base):
+    __tablename__ = 'ordenes'
+    idOrden = Column(Integer, primary_key=True)
+    idCliente = Column(Integer, ForeignKey('usuarios.id_usuario'), nullable=False)
+    total = Column(Float, nullable=False)
+    estado = Column(String, nullable=False)
+
+    cliente = relationship("Usuarios", back_populates="ordenes")
+
+    def __init__(self, idOrden, idCliente, total, estado):
+        self.idOrden = idOrden
+        self.idCliente = idCliente
+        self.total = total
+        self.estado = estado
+
+    def __repr__(self):
+        return f'Orden({self.idOrden}, {self.idCliente}, {self.total}, {self.estado})'
+    
+    def toDict(self):
+        return {
+            'idOrden': self.idOrden,
+            'idCliente': self.idCliente,
+            'total': self.total,
+            'estado': self.estado
+        }
+
+
+Usuarios.ordenes = relationship("Ordenes", order_by=Ordenes.idOrden, back_populates="cliente")
